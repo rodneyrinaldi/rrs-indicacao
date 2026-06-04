@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --border: #dadce0;
+  --brand: #1a73e8;
+  --text: #202124;
+  --muted: #5f6368;
+  --bg: #f8f9fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+a {
+  color: var(--brand);
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
