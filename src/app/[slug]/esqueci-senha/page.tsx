@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { CopyableLink } from "@/components/copyable-link";
+import { PhoneInput } from "@/components/phone-input";
 import { getCurrentActor } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { sanitizeWhatsapp } from "@/lib/phone";
+import { normalizePhone } from "@/lib/phone";
 
 type ResetLawyerRow = {
   hash_unico: string;
@@ -18,7 +19,7 @@ async function requestPasswordReset(formData: FormData): Promise<void> {
     throw new Error("Formulario invalido");
   }
 
-  const celularNormalizado = sanitizeWhatsapp(celular);
+  const celularNormalizado = normalizePhone(celular);
 
   const users = await query<ResetLawyerRow>(
     `
@@ -28,7 +29,7 @@ async function requestPasswordReset(formData: FormData): Promise<void> {
       WHERE u.escritorio_id = e.id
         AND e.slug = $1
         AND u.tipo = 'advogado'
-        AND u.celular = $2
+        AND regexp_replace(u.celular, '\\D', '', 'g') = $2
       RETURNING u.hash_unico
     `,
     [slug, celularNormalizado],
@@ -75,10 +76,10 @@ export default async function ForgotPasswordPage({
 
           <label className="block">
             <span className="mb-1 block text-sm text-slate-700">Celular</span>
-            <input
+            <PhoneInput
               name="celular"
               required
-              placeholder="11999998888"
+              placeholder="(11)91222-7040"
               className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
             />
           </label>

@@ -49,6 +49,39 @@ CREATE TABLE IF NOT EXISTS whitelabel.leads (
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+UPDATE whitelabel.escritorios
+SET celular_responsavel = regexp_replace(celular_responsavel, '\D', '', 'g')
+WHERE celular_responsavel ~ '\D';
+
+UPDATE whitelabel.usuarios
+SET celular = regexp_replace(celular, '\D', '', 'g')
+WHERE celular ~ '\D';
+
+UPDATE whitelabel.leads
+SET whatsapp_lead = regexp_replace(whatsapp_lead, '\D', '', 'g')
+WHERE whatsapp_lead ~ '\D';
+
+ALTER TABLE whitelabel.escritorios
+  DROP CONSTRAINT IF EXISTS escritores_celular_responsavel_digits_only;
+
+ALTER TABLE whitelabel.escritorios
+  ADD CONSTRAINT escritores_celular_responsavel_digits_only
+  CHECK (celular_responsavel ~ '^[0-9]+$');
+
+ALTER TABLE whitelabel.usuarios
+  DROP CONSTRAINT IF EXISTS usuarios_celular_digits_only;
+
+ALTER TABLE whitelabel.usuarios
+  ADD CONSTRAINT usuarios_celular_digits_only
+  CHECK (celular ~ '^[0-9]+$');
+
+ALTER TABLE whitelabel.leads
+  DROP CONSTRAINT IF EXISTS leads_whatsapp_lead_digits_only;
+
+ALTER TABLE whitelabel.leads
+  ADD CONSTRAINT leads_whatsapp_lead_digits_only
+  CHECK (whatsapp_lead ~ '^[0-9]+$');
+
 ALTER TABLE whitelabel.escritorios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE whitelabel.usuarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE whitelabel.aplicativos ENABLE ROW LEVEL SECURITY;

@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { PhoneInput } from "@/components/phone-input";
 import { createActorSession, getCurrentActor } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { sanitizeWhatsapp } from "@/lib/phone";
+import { normalizePhone } from "@/lib/phone";
 
 type LawyerRow = {
   id: string;
@@ -25,7 +26,7 @@ async function loginLawyer(formData: FormData): Promise<void> {
     throw new Error("Formulario invalido");
   }
 
-  const celularNormalizado = sanitizeWhatsapp(celular);
+  const celularNormalizado = normalizePhone(celular);
 
   const users = await query<LawyerRow>(
     `
@@ -34,7 +35,7 @@ async function loginLawyer(formData: FormData): Promise<void> {
       INNER JOIN whitelabel.escritorios e ON e.id = u.escritorio_id
       WHERE e.slug = $1
         AND u.tipo = 'advogado'
-        AND u.celular = $2
+        AND regexp_replace(u.celular, '\\D', '', 'g') = $2
       LIMIT 1
     `,
     [slug, celularNormalizado],
@@ -99,10 +100,10 @@ export default async function LawyerLoginPage({
 
           <label className="block">
             <span className="mb-1 block text-sm text-slate-700">Celular</span>
-            <input
+            <PhoneInput
               name="celular"
               required
-              placeholder="11999998888"
+              placeholder="(11)91222-7040"
               className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
             />
           </label>

@@ -19,9 +19,14 @@ function getPool(): Pool {
 
   const pool = new Pool({ connectionString: resolveConnectionString(connectionString) });
 
-  if (process.env.NODE_ENV !== "production") {
-    global.__dbPool = pool;
-  }
+  global.__dbPool = pool;
+
+  const shutdown = () => {
+    pool.end().finally(() => process.exit(0));
+  };
+
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
 
   return pool;
 }
@@ -57,8 +62,37 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   params: unknown[] = [],
 ): Promise<T[]> {
   const pool = getPool();
-  const result = await pool.query<T>(sql, params);
-  return result.rows;
+  try {
+    const result = await pool.query<T>(sql, params);
+    return result.rows;
+  } catch (error) {
+    throw normalizeDatabaseError(error, sql);
+  }
+}
+
+function normalizeDatabaseError(error: unknown, sql: string): Error {
+  if (error instanceof AggregateError) {
+    const causes = error.errors
+      .map((entry) => {
+        if (entry instanceof Error) {
+          return entry.message;
+        }
+        return String(entry);
+      })
+      .join(" | ");
+
+    return new Error(`Database query failed (aggregate): ${causes}. SQL: ${compactSql(sql)}`);
+  }
+
+  if (error instanceof Error) {
+    return new Error(`Database query failed: ${error.message}. SQL: ${compactSql(sql)}`);
+  }
+
+  return new Error(`Database query failed: ${String(error)}. SQL: ${compactSql(sql)}`);
+}
+
+function compactSql(sql: string): string {
+  return sql.replace(/\s+/g, " ").trim();
 }
 
 export async function runAsTenant<T>(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isSuperAdminAuthenticated } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { normalizePhone } from "@/lib/phone";
 
 const schema = z.object({
   celular: z.string().min(8).max(30),
@@ -22,13 +23,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Celular invalido" }, { status: 400 });
   }
 
-  const celular = parsed.data.celular.replace(/\D+/g, "");
+  const celular = normalizePhone(parsed.data.celular);
 
   const users = await query<ResetUser>(
     `
       UPDATE whitelabel.usuarios
       SET senha_hash = NULL
-      WHERE celular = $1
+      WHERE regexp_replace(celular, '\\D', '', 'g') = $1
       RETURNING hash_unico
     `,
     [celular],

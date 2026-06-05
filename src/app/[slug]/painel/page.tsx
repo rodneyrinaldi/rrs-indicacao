@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import { PhoneInput } from "@/components/phone-input";
 import { getBlockingState } from "@/lib/billing-window";
 import { query } from "@/lib/db";
-import { sanitizeWhatsapp } from "@/lib/phone";
+import { normalizePhone } from "@/lib/phone";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,7 @@ async function registrarLead(formData: FormData): Promise<void> {
     throw new Error("Servico nao permitido para este agente");
   }
 
-  const normalizedLead = sanitizeWhatsapp(whatsappLead);
+  const normalizedLead = normalizePhone(whatsappLead);
 
   const inserted = await query<{ id: string }>(
     `
@@ -102,7 +103,7 @@ async function registrarLead(formData: FormData): Promise<void> {
     `Ola! Segue o link do servico ${serviceName}: ${redirectUrl}`,
   );
 
-  redirect(`https://wa.me/${agent.agente_celular}?text=${message}`);
+  redirect(`https://wa.me/${normalizePhone(agent.agente_celular)}?text=${message}`);
 }
 
 export default async function PainelAgentePage({
@@ -223,11 +224,10 @@ export default async function PainelAgentePage({
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-700">WhatsApp do prospect</span>
-            <input
-              type="tel"
+            <PhoneInput
               name="whatsappLead"
               required
-              placeholder="Ex.: 11999998888"
+              placeholder="(11)91222-7040"
               className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
             />
           </label>

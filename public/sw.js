@@ -1,4 +1,4 @@
-const CACHE_NAME = "indicacao-static-v1";
+const CACHE_NAME = "indicacao-static-v2";
 const APP_SHELL = ["/"];
 
 self.addEventListener("install", (event) => {
@@ -20,7 +20,14 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  // Avoid caching API and Next internals to prevent stale chunks/reload loops.
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) {
     return;
   }
 
@@ -48,7 +55,7 @@ self.addEventListener("fetch", (event) => {
 
           return response;
         })
-        .catch(() => caches.match("/"));
+        .catch(() => Response.error());
     }),
   );
 });

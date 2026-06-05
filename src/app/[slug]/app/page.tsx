@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { CopyableLink } from "@/components/copyable-link";
 import { clearActorSession, getCurrentActor } from "@/lib/auth";
 import { query, runAsTenant } from "@/lib/db";
+import { formatPhone } from "@/lib/phone";
 
 type OfficeRow = {
   id: string;
@@ -164,7 +165,7 @@ export default async function LawyerAppPage({
           <ul className="mt-3 space-y-2">
             {dashboard.recentLeads.map((lead) => (
               <li key={lead.id} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                <p className="font-medium text-slate-900">{lead.whatsapp_lead}</p>
+                <p className="font-medium text-slate-900">{formatPhone(lead.whatsapp_lead)}</p>
                 <p className="text-xs uppercase text-slate-500">{lead.status}</p>
               </li>
             ))}
