@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PhoneInput } from "@/components/phone-input";
 import { createActorSession, getCurrentActor } from "@/lib/auth";
 import { query } from "@/lib/db";
@@ -83,6 +83,10 @@ export default async function LawyerLoginPage({
     [slug],
   );
   const office = offices[0];
+
+  if (!office) {
+    notFound();
+  }
 
   const actor = await getCurrentActor();
   if (office && actor?.tipo === "advogado" && actor.escritorioId === office.id) {
