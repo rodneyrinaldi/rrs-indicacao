@@ -31,8 +31,8 @@ async function loginLawyer(formData: FormData): Promise<void> {
   const users = await query<LawyerRow>(
     `
       SELECT u.id, u.escritorio_id, u.senha_hash
-      FROM whitelabel.usuarios u
-      INNER JOIN whitelabel.escritorios e ON e.id = u.escritorio_id
+      FROM indicacao.usuarios u
+      INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
       WHERE e.slug = $1
         AND u.tipo = 'advogado'
         AND regexp_replace(u.celular, '\\D', '', 'g') = $2
@@ -76,7 +76,7 @@ export default async function LawyerLoginPage({
   const offices = await query<OfficeRow>(
     `
       SELECT id
-      FROM whitelabel.escritorios
+      FROM indicacao.escritorios
       WHERE slug = $1
       LIMIT 1
     `,

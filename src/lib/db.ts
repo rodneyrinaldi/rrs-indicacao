@@ -6,15 +6,21 @@ declare global {
   var __dbPool: Pool | undefined;
 }
 
+type ConnectionMode = "local" | "supabase";
+
+const VALID_CONNECTION_MODES: ConnectionMode[] = ["local", "supabase"];
+
 function getPool(): Pool {
   if (global.__dbPool) {
     return global.__dbPool;
   }
 
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = resolveConfiguredConnectionString();
 
   if (!connectionString) {
-    throw new Error("DATABASE_URL nao configurada");
+    throw new Error(
+      "Nenhuma URL de banco configurada. Defina DATABASE_URL ou configure PRIMARY_DB com variaveis do provedor.",
+    );
   }
 
   const pool = new Pool({ connectionString: resolveConnectionString(connectionString) });
@@ -31,6 +37,46 @@ function getPool(): Pool {
   return pool;
 }
 
+function resolveConfiguredConnectionString(): string | undefined {
+  const mode = resolveConnectionMode();
+
+  if (mode === "supabase") {
+    const supabaseUrl = process.env.SUPABASE_DATABASE_URL_SCHEMA || process.env.SUPABASE_DATABASE_URL;
+    if (!supabaseUrl) {
+      throw new Error(
+        "DB_CONNECTION_MODE=supabase exige SUPABASE_DATABASE_URL ou SUPABASE_DATABASE_URL_SCHEMA.",
+      );
+    }
+    return supabaseUrl;
+  }
+
+  const localUrl = process.env.DATABASE_URL_SCHEMA || process.env.DATABASE_URL;
+  if (!localUrl) {
+    throw new Error("DB_CONNECTION_MODE=local exige DATABASE_URL ou DATABASE_URL_SCHEMA.");
+  }
+  return localUrl;
+}
+
+function resolveConnectionMode(): ConnectionMode {
+  const explicitMode = (process.env.DB_CONNECTION_MODE || "").trim().toLowerCase();
+  const legacyMode = (process.env.PRIMARY_DB || "").trim().toLowerCase();
+
+  if (explicitMode && legacyMode && explicitMode !== legacyMode) {
+    throw new Error(
+      "Conflito de configuracao: DB_CONNECTION_MODE e PRIMARY_DB possuem valores diferentes.",
+    );
+  }
+
+  const mode = (explicitMode || legacyMode || "local") as ConnectionMode;
+  if (!VALID_CONNECTION_MODES.includes(mode)) {
+    throw new Error(
+      `Modo de conexao invalido: \"${mode}\". Use apenas ${VALID_CONNECTION_MODES.join(" | ")}.`,
+    );
+  }
+
+  return mode;
+}
+
 function resolveConnectionString(connectionString: string): string {
   if (process.env.NODE_ENV === "production") {
     return connectionString;
@@ -44,11 +90,11 @@ function resolveConnectionString(connectionString: string): string {
     return connectionString;
   }
 
-  if (parsed.hostname !== "db") {
+  if (parsed.hostname !== "db" && parsed.hostname !== "postgres") {
     return connectionString;
   }
 
-  // In Docker Compose, service name "db" resolves normally; outside Docker use localhost.
+  // In Docker Compose, service names resolve normally; outside Docker use localhost.
   if (existsSync("/.dockerenv")) {
     return connectionString;
   }

@@ -23,9 +23,9 @@ async function requestPasswordReset(formData: FormData): Promise<void> {
 
   const users = await query<ResetLawyerRow>(
     `
-      UPDATE whitelabel.usuarios u
+      UPDATE indicacao.usuarios u
       SET senha_hash = NULL
-      FROM whitelabel.escritorios e
+      FROM indicacao.escritorios e
       WHERE u.escritorio_id = e.id
         AND e.slug = $1
         AND u.tipo = 'advogado'

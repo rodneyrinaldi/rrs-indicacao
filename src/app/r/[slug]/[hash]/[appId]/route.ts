@@ -25,9 +25,9 @@ export async function GET(
         l.escritorio_id,
         e.liberado_lista_positiva,
         a.url_destino
-      FROM whitelabel.leads l
-      INNER JOIN whitelabel.escritorios e ON e.id = l.escritorio_id
-      INNER JOIN whitelabel.aplicativos a ON a.id = l.aplicativo_id
+      FROM indicacao.leads l
+      INNER JOIN indicacao.escritorios e ON e.id = l.escritorio_id
+      INNER JOIN indicacao.aplicativos a ON a.id = l.aplicativo_id
       WHERE e.slug = $1
         AND l.id::text = $2
         AND a.id::text = $3
@@ -56,7 +56,7 @@ export async function GET(
 
   await query(
     `
-      UPDATE whitelabel.leads
+      UPDATE indicacao.leads
       SET localizacao_metadata = $1
       WHERE id = $2
     `,

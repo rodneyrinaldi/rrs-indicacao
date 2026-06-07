@@ -42,8 +42,8 @@ async function registrarLead(formData: FormData): Promise<void> {
         u.celular AS agente_celular,
         e.id AS escritorio_id,
         e.liberado_lista_positiva
-      FROM whitelabel.usuarios u
-      INNER JOIN whitelabel.escritorios e ON e.id = u.escritorio_id
+      FROM indicacao.usuarios u
+      INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
       WHERE e.slug = $1
         AND u.hash_unico = $2
         AND u.tipo = 'agente'
@@ -65,8 +65,8 @@ async function registrarLead(formData: FormData): Promise<void> {
   const allowed = await query<AllowedApp>(
     `
       SELECT a.id, a.nome_servico
-      FROM whitelabel.agentes_aplicativos aa
-      INNER JOIN whitelabel.aplicativos a ON a.id = aa.aplicativo_id
+      FROM indicacao.agentes_aplicativos aa
+      INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
       WHERE aa.agente_id = $1
         AND a.id::text = $2
       LIMIT 1
@@ -82,7 +82,7 @@ async function registrarLead(formData: FormData): Promise<void> {
 
   const inserted = await query<{ id: string }>(
     `
-      INSERT INTO whitelabel.leads (escritorio_id, agente_id, aplicativo_id, whatsapp_lead, status)
+      INSERT INTO indicacao.leads (escritorio_id, agente_id, aplicativo_id, whatsapp_lead, status)
       VALUES ($1, $2, $3, $4, 'suspect')
       RETURNING id
     `,
@@ -136,8 +136,8 @@ export default async function PainelAgentePage({
         u.celular AS agente_celular,
         e.id AS escritorio_id,
         e.liberado_lista_positiva
-      FROM whitelabel.usuarios u
-      INNER JOIN whitelabel.escritorios e ON e.id = u.escritorio_id
+      FROM indicacao.usuarios u
+      INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
       WHERE e.slug = $1
         AND u.hash_unico = $2
         AND u.tipo = 'agente'
@@ -177,8 +177,8 @@ export default async function PainelAgentePage({
   const apps = await query<AllowedApp>(
     `
       SELECT a.id, a.nome_servico
-      FROM whitelabel.agentes_aplicativos aa
-      INNER JOIN whitelabel.aplicativos a ON a.id = aa.aplicativo_id
+      FROM indicacao.agentes_aplicativos aa
+      INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
       WHERE aa.agente_id = $1
       ORDER BY a.nome_servico ASC
     `,

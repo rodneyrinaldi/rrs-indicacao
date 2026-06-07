@@ -1,5 +1,15 @@
-node_modules
-.next
-.env
+# Secrets — nunca versionar
+.env.dev
+.env.prod.local
+.env.prod.supabase
+.env*.local
+*.env
+
+# Backups
+backups/
 coverage
 docker/postgres_data
+
+# Node
+node_modules/
+.next

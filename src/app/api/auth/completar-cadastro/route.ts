@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
   const users = await query<UserRow>(
     `
       SELECT u.id, u.senha_hash, e.slug
-      FROM whitelabel.usuarios u
-      INNER JOIN whitelabel.escritorios e ON e.id = u.escritorio_id
+      FROM indicacao.usuarios u
+      INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
       WHERE u.hash_unico = $1
       LIMIT 1
     `,
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   await query(
     `
-      UPDATE whitelabel.usuarios
+      UPDATE indicacao.usuarios
       SET nome = $1,
           email = $2,
           senha_hash = $3

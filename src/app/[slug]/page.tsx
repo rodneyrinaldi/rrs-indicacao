@@ -15,7 +15,7 @@ export default async function TenantSlugEntryPage({
   const offices = await query<OfficeRow>(
     `
       SELECT id
-      FROM whitelabel.escritorios
+      FROM indicacao.escritorios
       WHERE slug = $1
       LIMIT 1
     `,

@@ -32,7 +32,7 @@ async function togglePositiveList(formData: FormData): Promise<void> {
 
   await query(
     `
-      UPDATE whitelabel.escritorios
+      UPDATE indicacao.escritorios
       SET liberado_lista_positiva = NOT liberado_lista_positiva
       WHERE id = $1
     `,
@@ -83,7 +83,7 @@ async function createTenant(formData: FormData): Promise<void> {
   await runAsTenant(escritorioId, async (client) => {
     await client.query(
       `
-        INSERT INTO whitelabel.escritorios (id, slug, celular_responsavel)
+        INSERT INTO indicacao.escritorios (id, slug, celular_responsavel)
         VALUES ($1, $2, $3)
       `,
       [escritorioId, slug, celularNormalized],
@@ -91,7 +91,7 @@ async function createTenant(formData: FormData): Promise<void> {
 
     await client.query(
       `
-        INSERT INTO whitelabel.usuarios (escritorio_id, tipo, celular, hash_unico)
+        INSERT INTO indicacao.usuarios (escritorio_id, tipo, celular, hash_unico)
         VALUES ($1, 'advogado', $2, $3)
       `,
       [escritorioId, celularNormalized, hashUnico],
@@ -145,7 +145,7 @@ export default async function SuperAdminPage({
     tenants = await query<TenantRow>(
       `
         SELECT id, nome_oficial, slug, celular_responsavel, liberado_lista_positiva
-        FROM whitelabel.escritorios
+        FROM indicacao.escritorios
         ORDER BY criado_em DESC
       `,
     );
@@ -224,8 +224,10 @@ export default async function SuperAdminPage({
         <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm">
           <h2 className="text-lg font-semibold">Banco de dados indisponivel</h2>
           <p className="mt-2">
-            Nao foi possivel carregar os escritorios. Verifique se o Postgres local esta em execucao e se a
-            <span className="font-medium"> DATABASE_URL</span> aponta para o banco correto.
+            Nao foi possivel carregar os escritorios. Verifique se o banco esta em execucao e se
+            <span className="font-medium"> DATABASE_URL</span> (modo local) ou
+            <span className="font-medium"> SUPABASE_DATABASE_URL</span> com
+            <span className="font-medium"> PRIMARY_DB=supabase</span> aponta para o banco correto.
           </p>
           <p className="mt-2 break-all text-xs text-amber-800">{databaseError}</p>
         </section>

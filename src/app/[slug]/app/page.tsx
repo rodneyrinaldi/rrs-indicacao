@@ -49,7 +49,7 @@ export default async function LawyerAppPage({
   const offices = await query<OfficeRow>(
     `
       SELECT id, nome_oficial, slug, celular_responsavel, liberado_lista_positiva
-      FROM whitelabel.escritorios
+      FROM indicacao.escritorios
       WHERE slug = $1
       LIMIT 1
     `,
@@ -82,14 +82,14 @@ export default async function LawyerAppPage({
           COUNT(*) FILTER (WHERE status = 'suspect')::int AS suspects,
           COUNT(*) FILTER (WHERE status = 'prospect')::int AS prospects,
           COUNT(*) FILTER (WHERE status = 'fechado')::int AS fechados
-        FROM whitelabel.leads
+        FROM indicacao.leads
       `,
     );
 
     const recentResult = await client.query<RecentLead>(
       `
         SELECT id, whatsapp_lead, status, criado_em::text
-        FROM whitelabel.leads
+        FROM indicacao.leads
         ORDER BY criado_em DESC
         LIMIT 5
       `,

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   const users = await query<ResetUser>(
     `
-      UPDATE whitelabel.usuarios
+      UPDATE indicacao.usuarios
       SET senha_hash = NULL
       WHERE regexp_replace(celular, '\\D', '', 'g') = $1
       RETURNING hash_unico
