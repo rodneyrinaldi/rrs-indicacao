@@ -47,7 +47,7 @@
     "db:restore":      "bash scripts/restore.sh",
     "db:backup:prod":  "bash scripts/backup.sh prod",
     "db:restore:prod": "bash scripts/restore.sh prod",
-    "db:init":         "docker exec -i r2-postgres psql -U r2-user -d r2-database < initdb.sql",
+    "db:init":         "docker exec -i r2-postgres psql -U r2-user -d r2-database < scripts/initdb.sql",
     "db:shell":        "docker exec -it r2-postgres psql -U r2-user -d r2-database",
     "db:shell:schema": "docker exec -it r2-postgres psql -U r2-user -d r2-database -c 'SET search_path TO \"r2-schema\";'",
     "db:volume:inspect":"docker volume inspect r2-pgdata",
