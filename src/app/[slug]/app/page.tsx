@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { CopyableLink } from "@/components/copyable-link";
 import { clearActorSession, getCurrentActor } from "@/lib/auth";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { query, runAsTenant } from "@/lib/db";
 import { formatPhone } from "@/lib/phone";
 
@@ -101,7 +102,7 @@ export default async function LawyerAppPage({
     };
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
   const lawyerLoginLink = `${baseUrl}/${slug}/login`;
   const agentPanelLink = `${baseUrl}/${slug}/painel`;
 

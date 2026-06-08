@@ -17,6 +17,13 @@ O app usa uma convencao simples: sempre ler `DATABASE_URL`.
 As queries do projeto usam schema explicito, por exemplo `indicacao.usuarios`.
 Por isso a conexao nao precisa informar schema na URL.
 
+Links absolutos usam esta prioridade:
+
+- `NEXT_PUBLIC_APP_URL` (ou `APP_URL`) quando informado
+- `VERCEL_URL` quando presente
+- `https://indicacao.rrs.net.br` em producao
+- `http://localhost:3000` em desenvolvimento
+
 Use [.env.example](.env.example) como referencia.
 
 ## Desenvolvimento com Postgres local
@@ -69,8 +76,11 @@ npm run supa:cloud:open
 Cadastre estas variaveis na Vercel:
 
 - `DATABASE_URL`
-- `NEXT_PUBLIC_APP_URL`
 - `SUPER_ADMIN_KEY`
+
+Opcional:
+
+- `NEXT_PUBLIC_APP_URL` ou `APP_URL` para sobrescrever a URL base dos links.
 
 Validacao local do formato esperado:
 

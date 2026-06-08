@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { CopyableLink } from "@/components/copyable-link";
 import { PhoneInput } from "@/components/phone-input";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { getCurrentActor } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
@@ -41,7 +42,7 @@ async function requestPasswordReset(formData: FormData): Promise<void> {
     redirect(`/${slug}/esqueci-senha?erro=numero-nao-encontrado`);
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppBaseUrl();
   const resetLink = encodeURIComponent(`${appUrl}/ativar/${user.hash_unico}`);
   redirect(`/${slug}/esqueci-senha?ok=1&link=${resetLink}`);
 }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { clearSuperAdminSession, isSuperAdminAuthenticated } from "@/lib/auth";
 import { CopyableLink } from "@/components/copyable-link";
 import { PhoneInput } from "@/components/phone-input";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { query, runAsTenant } from "@/lib/db";
 import { formatPhone, normalizePhone } from "@/lib/phone";
 
@@ -135,7 +136,7 @@ export default async function SuperAdminPage({
     redirect("/super-admin/login");
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://indicacao.rrs.net.br";
+  const appUrl = getAppBaseUrl();
   const activationUrl = hash ? `${appUrl}/ativar/${hash}` : null;
 
   let tenants: TenantRow[] = [];

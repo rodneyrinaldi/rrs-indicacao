@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { isSuperAdminAuthenticated } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Numero nao encontrado" }, { status: 404 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://indicacao.rrs.net.br";
+  const appUrl = getAppBaseUrl();
   return NextResponse.json({
     ok: true,
     redirectTo: `${appUrl}/ativar/${user.hash_unico}`,

@@ -28,7 +28,7 @@ describe("redirect route", () => {
       },
     ] as never);
 
-    const request = new Request("http://localhost:3000/r/rrs/hash123/app123", {
+    const request = new Request("https://indicacao.rrs.net.br/r/rrs/hash123/app123", {
       method: "GET",
       headers: {
         "x-vercel-ip-country": "BR",

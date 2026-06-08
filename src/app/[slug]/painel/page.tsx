@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { PhoneInput } from "@/components/phone-input";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { getBlockingState } from "@/lib/billing-window";
 import { query } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
@@ -96,7 +97,7 @@ async function registrarLead(formData: FormData): Promise<void> {
   }
 
   const serviceName = allowed[0].nome_servico;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
   const redirectUrl = `${baseUrl}/r/${slug}/${leadId}/${appId}`;
 
   const message = encodeURIComponent(

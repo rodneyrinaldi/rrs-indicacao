@@ -13,7 +13,6 @@ const MODES = {
       "DB_PASS",
       "DB_NAME",
       "DATABASE_URL",
-      "NEXT_PUBLIC_APP_URL",
       "SUPER_ADMIN_KEY",
     ],
   },
@@ -21,7 +20,6 @@ const MODES = {
     source: ".env.prod.supabase",
     requiredOneOf: [["DATABASE_URL", "SUPABASE_DATABASE_URL"]],
     required: [
-      "NEXT_PUBLIC_APP_URL",
       "SUPER_ADMIN_KEY",
     ],
   },
@@ -29,7 +27,6 @@ const MODES = {
     source: "process.env",
     requiredOneOf: [["DATABASE_URL", "SUPABASE_DATABASE_URL"]],
     required: [
-      "NEXT_PUBLIC_APP_URL",
       "SUPER_ADMIN_KEY",
     ],
   },
