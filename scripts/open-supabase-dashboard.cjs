@@ -12,7 +12,7 @@ const projectRef = resolveProjectRef(env);
 
 if (!projectRef) {
   console.error(
-    "Nao foi possivel determinar SUPABASE_PROJECT_REF. Defina SUPABASE_PROJECT_REF em .env.prod.supabase ou use SUPABASE_DATABASE_URL com host db.<ref>.supabase.co",
+    "Nao foi possivel determinar SUPABASE_PROJECT_REF. Defina SUPABASE_PROJECT_REF em .env.prod.supabase ou use DATABASE_URL/SUPABASE_DATABASE_URL do projeto Supabase.",
   );
   process.exit(1);
 }
@@ -71,7 +71,9 @@ function resolveProjectRef(envValues) {
     return directRef;
   }
 
-  const connectionString = String(envValues.SUPABASE_DATABASE_URL || "").trim();
+  const connectionString = String(
+    envValues.DATABASE_URL || envValues.SUPABASE_DATABASE_URL || "",
+  ).trim();
   if (!connectionString) {
     return "";
   }
@@ -79,8 +81,14 @@ function resolveProjectRef(envValues) {
   try {
     const parsed = new URL(connectionString);
     const hostname = parsed.hostname || "";
-    const match = hostname.match(/^db\.([a-z0-9]+)\.supabase\.co$/i);
-    return match ? match[1] : "";
+    const username = decodeURIComponent(parsed.username || "");
+    const hostMatch = hostname.match(/^db\.([a-z0-9]+)\.supabase\.co$/i);
+    if (hostMatch) {
+      return hostMatch[1];
+    }
+
+    const userMatch = username.match(/^postgres\.([a-z0-9]+)$/i);
+    return userMatch ? userMatch[1] : "";
   } catch {
     return "";
   }

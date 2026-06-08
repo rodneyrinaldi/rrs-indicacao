@@ -225,9 +225,7 @@ export default async function SuperAdminPage({
           <h2 className="text-lg font-semibold">Banco de dados indisponivel</h2>
           <p className="mt-2">
             Nao foi possivel carregar os escritorios. Verifique se o banco esta em execucao e se
-            <span className="font-medium"> DATABASE_URL</span> (modo local) ou
-            <span className="font-medium"> SUPABASE_DATABASE_URL</span> com
-            <span className="font-medium"> PRIMARY_DB=supabase</span> aponta para o banco correto.
+            <span className="font-medium"> DATABASE_URL</span> aponta para o banco correto.
           </p>
           <p className="mt-2 break-all text-xs text-amber-800">{databaseError}</p>
         </section>

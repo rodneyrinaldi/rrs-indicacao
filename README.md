@@ -1,119 +1,84 @@
 # indicacao
 
-SaaS White Label privado para indicacoes juridicas com Next.js (App Router), PostgreSQL e Docker.
+Projeto Next.js com tres cenarios suportados:
+
+1. desenvolvimento no Windows com Postgres local em container
+2. desenvolvimento no Windows usando o banco da Supabase na nuvem
+3. producao na Vercel usando Supabase na nuvem
 
 ## Requisitos
 
-- Docker e Docker Compose
 - Node.js 20+
+- Docker Desktop no Windows para o Postgres local
 
-## Configuracao de Ambiente
+## Variaveis
 
-1. Use [.env.example](.env.example) como referencia.
-2. Preencha somente o arquivo do cenario que sera executado.
-3. Defina a chave mestre `DB_CONNECTION_MODE` (`local` ou `supabase`).
-4. `PRIMARY_DB` segue aceito apenas por compatibilidade.
-5. Valide antes de subir:
+O app usa uma convencao simples: sempre ler `DATABASE_URL`.
+As queries do projeto usam schema explicito, por exemplo `indicacao.usuarios`.
+Por isso a conexao nao precisa informar schema na URL.
 
-```bash
-npm run env:validate:dev
-npm run env:validate:prod-local
-npm run env:validate:supabase
-npm run env:validate:supabase-cloud
-```
+Use [.env.example](.env.example) como referencia.
 
-## Fluxo de Execucao e Deploy
+## Desenvolvimento com Postgres local
 
-### 1) Desenvolvimento (Windows + Docker local apenas para Postgres)
-
-1. Configure [.env.dev](.env.dev) com os dados locais.
-2. Suba somente o banco:
+1. Configure `.env.dev`.
+2. Suba o banco local:
 
 ```bash
-npm run dev:up
+npm run db:up
 ```
 
-3. Rode o Next.js no host:
+3. Rode o app:
 
 ```bash
 npm run dev
 ```
 
-App em http://localhost:3000 e Postgres em localhost:5432.
-
-### 2) Producao Linux (Next.js + Postgres em containers)
-
-1. Configure [.env.prod.local](.env.prod.local).
-2. Suba os containers:
+Comandos uteis:
 
 ```bash
-npm run prod:up
+npm run db:ps
+npm run db:logs
+npm run db:shell
+npm run db:down
 ```
 
-3. Para redeploy completo com rebuild da imagem do Next.js:
+## Desenvolvimento com Supabase cloud
+
+1. Configure `.env.prod.supabase`.
+2. Rode o app:
 
 ```bash
-npm run prod:deploy
+npm run dev:supabase
 ```
 
-### 3) Deploy com Supabase
-
-#### 3.1 Linux com container Next.js + banco no Supabase
-
-1. Configure [.env.prod.supabase](.env.prod.supabase) com DB_CONNECTION_MODE=supabase e SUPABASE_DATABASE_URL(_SCHEMA).
-2. Suba o container do Next.js:
+Para validar o arquivo:
 
 ```bash
-npm run supa:up
+npm run env:validate:supabase
 ```
 
-3. Para redeploy com rebuild:
-
-```bash
-npm run supa:deploy
-```
-
-#### 3.2 Vercel + Supabase
-
-No projeto da Vercel, configure as variaveis:
-- DB_CONNECTION_MODE=supabase
-- SUPABASE_DATABASE_URL
-- SUPER_ADMIN_KEY
-- NEXT_PUBLIC_APP_URL
-
-Opcionalmente valide as variaveis no ambiente local antes de publicar:
-
-```bash
-npm run env:validate:vercel
-```
-
-Neste modo nao e necessario Docker para a aplicacao.
-
-#### 3.3 Acesso direto ao banco no site da Supabase (Cloud)
-
-Para manter os cenarios atuais e tambem abrir o banco no dashboard web da Supabase:
-
-1. Defina na `.env.prod.supabase`:
-- `DB_CONNECTION_MODE=supabase`
-- `SUPABASE_DATABASE_URL=postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres`
-- `SUPABASE_PROJECT_REF=<ref-do-projeto>`
-2. Valide o ambiente:
-
-```bash
-npm run env:validate:supabase-cloud
-```
-
-3. Abra o SQL Editor no navegador:
+Para abrir o SQL Editor da Supabase:
 
 ```bash
 npm run supa:cloud:open
 ```
 
-Se quiser somente a URL (sem abrir navegador):
+## Producao na Vercel com Supabase
+
+Cadastre estas variaveis na Vercel:
+
+- `DATABASE_URL`
+- `NEXT_PUBLIC_APP_URL`
+- `SUPER_ADMIN_KEY`
+
+Validacao local do formato esperado:
 
 ```bash
-npm run supa:cloud:url
+npm run vercel:check
 ```
+
+Nao ha container de aplicacao em producao neste projeto.
 
 ## Init (Supabase)
 
@@ -123,7 +88,7 @@ Use este fluxo para inicializar a base no Supabase com o schema `indicacao`.
 2. Abra SQL Editor.
 3. Execute o SQL abaixo para criar schema, tabelas e politicas RLS.
 4. Em Project Settings > Database, copie a connection string.
-5. Atualize a SUPABASE_DATABASE_URL no ambiente de deploy para apontar para o Supabase.
+5. Atualize a DATABASE_URL no ambiente local ou na Vercel para apontar para o Supabase.
 6. Para ambiente serverless, prefira conexao pooled (Supavisor) com `sslmode=require`.
 
 ```sql
@@ -237,10 +202,8 @@ Se a base no Supabase for `indicacao`, alinhe o codigo para usar `indicacao` em 
 
 ## Estrutura principal
 
-- init.sql: schema indicacao, tabelas e RLS
-- docker-compose.dev.yml: apenas Postgres para desenvolvimento local
-- docker-compose.prod.local.yml: Next.js + Postgres em containers
-- docker-compose.prod.supabase.yml: Next.js em container com banco Supabase
+- docker-compose.yml: apenas Postgres para desenvolvimento local no Windows
+- scripts/init.sql: bootstrap do banco local
 - src/lib/db.ts: resolucao de conexao por ambiente
 - scripts/validate-env.cjs: validacao de variaveis por cenario
 - scripts/open-supabase-dashboard.cjs: abre SQL Editor da Supabase Cloud por `SUPABASE_PROJECT_REF`

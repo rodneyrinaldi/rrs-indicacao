@@ -1,9 +1,6 @@
 # Secrets — nunca versionar
-.env.dev
-.env.prod.local
-.env.prod.supabase
-.env*.local
-*.env
+.env
+*.env.*
 
 # Backups
 backups/

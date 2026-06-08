@@ -1,11 +1,33 @@
-# docker-compose.yml — volumes e rede compartilhada
-# postgres NAO está aqui — definido em cada override que precisa dele
+# docker-compose.yml — Postgres local para desenvolvimento no Windows
+# Uso: docker compose --env-file .env.dev up -d
+# App roda no host e acessa DATABASE_URL em .env.dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: r2-postgres
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks: [r2-net]
 
 volumes:
   pgdata:
     name: r2-pgdata
-  certdata:
-    name: r2-certdata
 
 networks:
   r2-net:
