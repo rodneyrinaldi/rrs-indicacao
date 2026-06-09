@@ -5,6 +5,24 @@ function normalizeBaseUrl(url: string): string {
   return url.trim().replace(/\/+$/, "");
 }
 
+function isLocalUrl(url: string): boolean {
+  try {
+    const withProtocol = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    const { hostname } = new URL(withProtocol);
+    const normalizedHost = hostname.toLowerCase();
+
+    return (
+      normalizedHost === "localhost" ||
+      normalizedHost === "127.0.0.1" ||
+      normalizedHost === "0.0.0.0" ||
+      normalizedHost === "::1" ||
+      normalizedHost.endsWith(".local")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function fromVercelUrl(vercelUrl: string | undefined): string | null {
   if (!vercelUrl) {
     return null;
@@ -23,7 +41,11 @@ export function getAppBaseUrl(): string {
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL;
 
   if (configuredUrl && configuredUrl.trim()) {
-    return normalizeBaseUrl(configuredUrl);
+    const normalizedConfiguredUrl = normalizeBaseUrl(configuredUrl);
+
+    if (!(process.env.NODE_ENV === "production" && isLocalUrl(normalizedConfiguredUrl))) {
+      return normalizedConfiguredUrl;
+    }
   }
 
   const vercelUrl = fromVercelUrl(process.env.VERCEL_URL);

@@ -5,7 +5,7 @@ import { createActorSession, getCurrentActor } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
 
-type LawyerRow = {
+type AgentRow = {
   id: string;
   escritorio_id: string;
   senha_hash: string | null;
@@ -15,7 +15,7 @@ type OfficeRow = {
   id: string;
 };
 
-async function loginLawyer(formData: FormData): Promise<void> {
+async function loginAgent(formData: FormData): Promise<void> {
   "use server";
 
   const slug = formData.get("slug");
@@ -28,13 +28,13 @@ async function loginLawyer(formData: FormData): Promise<void> {
 
   const celularNormalizado = normalizePhone(celular);
 
-  const users = await query<LawyerRow>(
+  const users = await query<AgentRow>(
     `
       SELECT u.id, u.escritorio_id, u.senha_hash
       FROM indicacao.usuarios u
       INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
       WHERE e.slug = $1
-        AND u.tipo = 'advogado'
+        AND u.tipo = 'agente'
         AND regexp_replace(u.celular, '\\D', '', 'g') = $2
       LIMIT 1
     `,
@@ -44,26 +44,26 @@ async function loginLawyer(formData: FormData): Promise<void> {
   const user = users[0];
 
   if (!user?.senha_hash) {
-    redirect(`/${slug}/login?erro=credenciais-invalidas`);
+    redirect(`/${slug}/agente/login?erro=credenciais-invalidas`);
   }
 
   const senhaValida = await bcrypt.compare(senha, user.senha_hash);
 
   if (!senhaValida) {
-    redirect(`/${slug}/login?erro=credenciais-invalidas`);
+    redirect(`/${slug}/agente/login?erro=credenciais-invalidas`);
   }
 
   await createActorSession({
     userId: user.id,
-    tipo: "advogado",
+    tipo: "agente",
     escritorioId: user.escritorio_id,
     celular: celularNormalizado,
   });
 
-  redirect(`/${slug}/app`);
+  redirect(`/${slug}/agente/app`);
 }
 
-export default async function LawyerLoginPage({
+export default async function AgentLoginPage({
   params,
   searchParams,
 }: {
@@ -82,6 +82,7 @@ export default async function LawyerLoginPage({
     `,
     [slug],
   );
+
   const office = offices[0];
 
   if (!office) {
@@ -89,17 +90,17 @@ export default async function LawyerLoginPage({
   }
 
   const actor = await getCurrentActor();
-  if (office && actor?.tipo === "advogado" && actor.escritorioId === office.id) {
-    redirect(`/${slug}/app`);
+  if (office && actor?.tipo === "agente" && actor.escritorioId === office.id) {
+    redirect(`/${slug}/agente/app`);
   }
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
       <section className="w-full rounded-xl border border-border bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">Login do Inquilino</h1>
-        <p className="mt-2 text-sm text-slate-600">Entre com celular e senha para acessar o app.</p>
+        <h1 className="text-2xl font-semibold">Login do Agente</h1>
+        <p className="mt-2 text-sm text-slate-600">Entre com celular e senha para acessar o painel.</p>
 
-        <form action={loginLawyer} className="mt-6 space-y-4">
+        <form action={loginAgent} className="mt-6 space-y-4">
           <input type="hidden" name="slug" value={slug} />
 
           <label className="block">
@@ -121,12 +122,6 @@ export default async function LawyerLoginPage({
               className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
             />
           </label>
-
-          <p className="text-right text-sm">
-            <a className="text-blue-700 hover:underline" href={`/${slug}/esqueci-senha`}>
-              Esqueci minha senha
-            </a>
-          </p>
 
           <button
             type="submit"

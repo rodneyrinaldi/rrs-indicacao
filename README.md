@@ -153,11 +153,26 @@ create table if not exists indicacao.leads (
 	criado_em timestamptz not null default now()
 );
 
+create table if not exists indicacao.solicitacoes_troca_celular (
+	id uuid primary key default gen_random_uuid(),
+	escritorio_id uuid not null references indicacao.escritorios(id) on delete cascade,
+	solicitante_id uuid not null references indicacao.usuarios(id) on delete cascade,
+	usuario_alvo_id uuid not null references indicacao.usuarios(id) on delete cascade,
+	celular_atual varchar(30) not null,
+	celular_novo varchar(30) not null,
+	token_hash text not null unique,
+	status varchar(20) not null default 'pendente' check (status in ('pendente', 'confirmada', 'cancelada')),
+	expira_em timestamptz not null default (now() + interval '72 hours'),
+	confirmado_em timestamptz null,
+	criado_em timestamptz not null default now()
+);
+
 alter table indicacao.escritorios enable row level security;
 alter table indicacao.usuarios enable row level security;
 alter table indicacao.aplicativos enable row level security;
 alter table indicacao.agentes_aplicativos enable row level security;
 alter table indicacao.leads enable row level security;
+alter table indicacao.solicitacoes_troca_celular enable row level security;
 
 drop policy if exists p_escritorios_por_tenant on indicacao.escritorios;
 create policy p_escritorios_por_tenant on indicacao.escritorios
@@ -198,11 +213,17 @@ with check (
 	)
 );
 
+drop policy if exists p_solicitacoes_troca_celular_por_tenant on indicacao.solicitacoes_troca_celular;
+create policy p_solicitacoes_troca_celular_por_tenant on indicacao.solicitacoes_troca_celular
+using (escritorio_id::text = current_setting('app.escritorio_id', true))
+with check (escritorio_id::text = current_setting('app.escritorio_id', true));
+
 alter table indicacao.escritorios force row level security;
 alter table indicacao.usuarios force row level security;
 alter table indicacao.aplicativos force row level security;
 alter table indicacao.agentes_aplicativos force row level security;
 alter table indicacao.leads force row level security;
+alter table indicacao.solicitacoes_troca_celular force row level security;
 ```
 
 ### Observacao Importante

@@ -14,6 +14,7 @@ type UserRow = {
   id: string;
   senha_hash: string | null;
   slug: string | null;
+  tipo: "advogado" | "agente";
 };
 
 export async function POST(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
   const { hash, nome, email, senha } = parsed.data;
   const users = await query<UserRow>(
     `
-      SELECT u.id, u.senha_hash, e.slug
+      SELECT u.id, u.senha_hash, u.tipo, e.slug
       FROM indicacao.usuarios u
       INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
       WHERE u.hash_unico = $1
@@ -60,6 +61,10 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    redirectTo: user.slug ? `/${user.slug}/login` : "/super-admin",
+    redirectTo: user.slug
+      ? user.tipo === "agente"
+        ? `/${user.slug}/agente/login`
+        : `/${user.slug}/login`
+      : "/super-admin",
   });
 }

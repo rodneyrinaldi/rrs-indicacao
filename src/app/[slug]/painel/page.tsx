@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { PhoneInput } from "@/components/phone-input";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { getCurrentActor } from "@/lib/auth";
 import { getBlockingState } from "@/lib/billing-window";
 import { query } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 type AgentData = {
   agente_id: string;
   agente_celular: string;
+  agente_tipo: "agente" | "advogado";
   escritorio_id: string;
   liberado_lista_positiva: boolean;
 };
@@ -29,31 +31,79 @@ async function registrarLead(formData: FormData): Promise<void> {
 
   if (
     typeof slug !== "string" ||
-    typeof hash !== "string" ||
     typeof appId !== "string" ||
     typeof whatsappLead !== "string"
   ) {
     throw new Error("Formulario invalido");
   }
 
-  const agentRows = await query<AgentData>(
-    `
-      SELECT
-        u.id AS agente_id,
-        u.celular AS agente_celular,
-        e.id AS escritorio_id,
-        e.liberado_lista_positiva
-      FROM indicacao.usuarios u
-      INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
-      WHERE e.slug = $1
-        AND u.hash_unico = $2
-        AND u.tipo = 'agente'
-      LIMIT 1
-    `,
-    [slug, hash],
-  );
+  let agent: AgentData | null = null;
 
-  const agent = agentRows[0];
+  if (typeof hash === "string" && hash) {
+    const agentRows = await query<AgentData>(
+      `
+        SELECT
+          u.id AS agente_id,
+          u.celular AS agente_celular,
+          u.tipo AS agente_tipo,
+          e.id AS escritorio_id,
+          e.liberado_lista_positiva
+        FROM indicacao.usuarios u
+        INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
+        WHERE e.slug = $1
+          AND u.hash_unico = $2
+          AND u.tipo = 'agente'
+        LIMIT 1
+      `,
+      [slug, hash],
+    );
+
+    agent = agentRows[0] ?? null;
+  } else {
+    const actor = await getCurrentActor();
+
+    if (actor?.tipo === "advogado") {
+      const lawyerRows = await query<AgentData>(
+        `
+          SELECT
+            u.id AS agente_id,
+            u.celular AS agente_celular,
+            u.tipo AS agente_tipo,
+            e.id AS escritorio_id,
+            e.liberado_lista_positiva
+          FROM indicacao.usuarios u
+          INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
+          WHERE e.slug = $1
+            AND u.id = $2
+            AND u.tipo = 'advogado'
+          LIMIT 1
+        `,
+        [slug, actor.userId],
+      );
+
+      agent = lawyerRows[0] ?? null;
+    } else if (actor?.tipo === "agente") {
+      const agentBySessionRows = await query<AgentData>(
+        `
+          SELECT
+            u.id AS agente_id,
+            u.celular AS agente_celular,
+            u.tipo AS agente_tipo,
+            e.id AS escritorio_id,
+            e.liberado_lista_positiva
+          FROM indicacao.usuarios u
+          INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
+          WHERE e.slug = $1
+            AND u.id = $2
+            AND u.tipo = 'agente'
+          LIMIT 1
+        `,
+        [slug, actor.userId],
+      );
+
+      agent = agentBySessionRows[0] ?? null;
+    }
+  }
 
   if (!agent) {
     throw new Error("Agente nao localizado");
@@ -63,17 +113,29 @@ async function registrarLead(formData: FormData): Promise<void> {
     redirect(`/${slug}/painel?hash=${hash}`);
   }
 
-  const allowed = await query<AllowedApp>(
-    `
-      SELECT a.id, a.nome_servico
-      FROM indicacao.agentes_aplicativos aa
-      INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
-      WHERE aa.agente_id = $1
-        AND a.id::text = $2
-      LIMIT 1
-    `,
-    [agent.agente_id, appId],
-  );
+  const allowed =
+    agent.agente_tipo === "advogado"
+      ? await query<AllowedApp>(
+          `
+            SELECT a.id, a.nome_servico
+            FROM indicacao.aplicativos a
+            WHERE a.escritorio_id = $1
+              AND a.id::text = $2
+            LIMIT 1
+          `,
+          [agent.escritorio_id, appId],
+        )
+      : await query<AllowedApp>(
+          `
+            SELECT a.id, a.nome_servico
+            FROM indicacao.agentes_aplicativos aa
+            INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
+            WHERE aa.agente_id = $1
+              AND a.id::text = $2
+            LIMIT 1
+          `,
+          [agent.agente_id, appId],
+        );
 
   if (!allowed[0]) {
     throw new Error("Servico nao permitido para este agente");
@@ -117,44 +179,84 @@ export default async function PainelAgentePage({
   const { slug } = await params;
   const { hash } = await searchParams;
 
-  if (!hash) {
-    return (
-      <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-        <section className="w-full rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">Acesso ao Painel</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Use o link de acesso do seu onboarding para entrar no painel.
-          </p>
-        </section>
-      </main>
+  let agent: AgentData | null = null;
+
+  if (hash) {
+    const agentRows = await query<AgentData>(
+      `
+        SELECT
+          u.id AS agente_id,
+          u.celular AS agente_celular,
+          u.tipo AS agente_tipo,
+          e.id AS escritorio_id,
+          e.liberado_lista_positiva
+        FROM indicacao.usuarios u
+        INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
+        WHERE e.slug = $1
+          AND u.hash_unico = $2
+          AND u.tipo = 'agente'
+        LIMIT 1
+      `,
+      [slug, hash],
     );
+
+    agent = agentRows[0] ?? null;
   }
 
-  const agentRows = await query<AgentData>(
-    `
-      SELECT
-        u.id AS agente_id,
-        u.celular AS agente_celular,
-        e.id AS escritorio_id,
-        e.liberado_lista_positiva
-      FROM indicacao.usuarios u
-      INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
-      WHERE e.slug = $1
-        AND u.hash_unico = $2
-        AND u.tipo = 'agente'
-      LIMIT 1
-    `,
-    [slug, hash],
-  );
+  if (!agent) {
+    const actor = await getCurrentActor();
 
-  const agent = agentRows[0];
+    if (actor?.tipo === "advogado") {
+      const lawyerRows = await query<AgentData>(
+        `
+          SELECT
+            u.id AS agente_id,
+            u.celular AS agente_celular,
+            u.tipo AS agente_tipo,
+            e.id AS escritorio_id,
+            e.liberado_lista_positiva
+          FROM indicacao.usuarios u
+          INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
+          WHERE e.slug = $1
+            AND u.id = $2
+            AND u.tipo = 'advogado'
+          LIMIT 1
+        `,
+        [slug, actor.userId],
+      );
+
+      agent = lawyerRows[0] ?? null;
+    } else if (actor?.tipo === "agente") {
+      const agentBySessionRows = await query<AgentData>(
+        `
+          SELECT
+            u.id AS agente_id,
+            u.celular AS agente_celular,
+            u.tipo AS agente_tipo,
+            e.id AS escritorio_id,
+            e.liberado_lista_positiva
+          FROM indicacao.usuarios u
+          INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
+          WHERE e.slug = $1
+            AND u.id = $2
+            AND u.tipo = 'agente'
+          LIMIT 1
+        `,
+        [slug, actor.userId],
+      );
+
+      agent = agentBySessionRows[0] ?? null;
+    }
+  }
 
   if (!agent) {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
         <section className="w-full rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">Agente nao encontrado</h1>
-          <p className="mt-2 text-sm text-slate-600">Valide seu link de acesso.</p>
+          <h1 className="text-xl font-semibold">Acesso ao Painel</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Use o link de onboarding ou faca login como inquilino para acessar o painel.
+          </p>
         </section>
       </main>
     );
@@ -175,16 +277,27 @@ export default async function PainelAgentePage({
     );
   }
 
-  const apps = await query<AllowedApp>(
-    `
-      SELECT a.id, a.nome_servico
-      FROM indicacao.agentes_aplicativos aa
-      INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
-      WHERE aa.agente_id = $1
-      ORDER BY a.nome_servico ASC
-    `,
-    [agent.agente_id],
-  );
+  const apps =
+    agent.agente_tipo === "advogado"
+      ? await query<AllowedApp>(
+          `
+            SELECT a.id, a.nome_servico
+            FROM indicacao.aplicativos a
+            WHERE a.escritorio_id = $1
+            ORDER BY a.nome_servico ASC
+          `,
+          [agent.escritorio_id],
+        )
+      : await query<AllowedApp>(
+          `
+            SELECT a.id, a.nome_servico
+            FROM indicacao.agentes_aplicativos aa
+            INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
+            WHERE aa.agente_id = $1
+            ORDER BY a.nome_servico ASC
+          `,
+          [agent.agente_id],
+        );
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl px-6 py-10">
@@ -202,7 +315,7 @@ export default async function PainelAgentePage({
 
         <form action={registrarLead} className="mt-8 space-y-5">
           <input type="hidden" name="slug" value={slug} />
-          <input type="hidden" name="hash" value={hash} />
+          {hash && <input type="hidden" name="hash" value={hash} />}
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-700">Servico juridico</span>
