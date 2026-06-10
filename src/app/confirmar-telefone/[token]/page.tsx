@@ -32,10 +32,10 @@ export default async function ConfirmarTelefonePage({
 
   if (!request) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-        <section className="w-full rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">Link invalido</h1>
-          <p className="mt-2 text-sm text-slate-600">Este link de confirmacao nao existe ou foi removido.</p>
+      <main className="auth-shell">
+        <section className="auth-card text-center">
+          <h1 className="text-xl font-semibold tracking-tight">Link invalido</h1>
+          <p className="body-muted mt-2">Este link de confirmacao nao existe ou foi removido.</p>
         </section>
       </main>
     );
@@ -46,11 +46,12 @@ export default async function ConfirmarTelefonePage({
   const loginPath = request.usuario_tipo === "agente" ? `/${request.escritorio_slug}/agente/login` : `/${request.escritorio_slug}/login`;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-      <section className="w-full rounded-xl border border-border bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">Confirmacao de troca de telefone</h1>
+    <main className="auth-shell">
+      <section className="auth-card">
+        <p className="eyebrow">Confirmacao</p>
+        <h1 className="title-lg">Troca de telefone</h1>
 
-        <dl className="mt-5 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
+        <dl className="mt-5 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
           <div>
             <dt className="font-medium text-slate-600">Numero atual</dt>
             <dd className="text-slate-900">{formatPhone(request.celular_atual)}</dd>
@@ -63,14 +64,14 @@ export default async function ConfirmarTelefonePage({
 
         {pending && (
           <>
-            <p className="mt-4 text-sm text-slate-600">
+            <p className="body-muted mt-4">
               Ao confirmar, o sistema atualiza apenas o telefone do usuario. O historico de indicacoes permanece intacto.
             </p>
             <form action={confirmarTroca} className="mt-4">
               <input type="hidden" name="token" value={token} />
               <button
                 type="submit"
-                className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                className="primary-button"
               >
                 Confirmar novo telefone
               </button>
@@ -79,19 +80,19 @@ export default async function ConfirmarTelefonePage({
         )}
 
         {!pending && request.status === "confirmada" && (
-          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+          <div className="status-message status-message--success">
             Troca confirmada com sucesso. O novo numero ja esta ativo.
           </div>
         )}
 
         {!pending && request.status === "cancelada" && (
-          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <div className="status-message status-message--warning">
             Este link foi substituido por uma solicitacao mais recente.
           </div>
         )}
 
         {!pending && request.status === "pendente" && expired && (
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="status-message status-message--error">
             Este link expirou. Solicite um novo link de confirmacao.
           </div>
         )}

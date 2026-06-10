@@ -94,31 +94,32 @@ export default async function LawyerLoginPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-      <section className="w-full rounded-xl border border-border bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">Login do Inquilino</h1>
-        <p className="mt-2 text-sm text-slate-600">Entre com celular e senha para acessar o app.</p>
+    <main className="auth-shell">
+      <section className="auth-card">
+        <p className="eyebrow">Acesso do escritorio</p>
+        <h1 className="title-lg">Login do advogado</h1>
+        <p className="body-muted">Entre com celular e senha para acessar o app.</p>
 
-        <form action={loginLawyer} className="mt-6 space-y-4">
+        <form action={loginLawyer} className="form-stack">
           <input type="hidden" name="slug" value={slug} />
 
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700">Celular</span>
+            <span className="field-label">Celular</span>
             <PhoneInput
               name="celular"
               required
               placeholder="(11)91222-7040"
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700">Senha</span>
+            <span className="field-label">Senha</span>
             <input
               type="password"
               name="senha"
               required
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
@@ -130,18 +131,20 @@ export default async function LawyerLoginPage({
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-brand px-4 py-2 font-medium text-white hover:opacity-90"
+            className="primary-button w-full"
           >
             Entrar
           </button>
         </form>
 
         {erro === "credenciais-invalidas" && (
-          <p className="mt-4 text-sm text-red-700">Celular ou senha invalidos.</p>
+          <p className="status-message status-message--error">Celular ou senha invalidos.</p>
         )}
 
         {telefone === "atualizado" && (
-          <p className="mt-4 text-sm text-green-700">Telefone atualizado. Entre com o novo numero.</p>
+          <p className="status-message status-message--success">
+            Telefone atualizado. Entre com o novo numero.
+          </p>
         )}
       </section>
     </main>

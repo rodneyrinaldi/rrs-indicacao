@@ -11,7 +11,6 @@ export const dynamic = "force-dynamic";
 type AgentData = {
   agente_id: string;
   agente_celular: string;
-  agente_tipo: "agente" | "advogado";
   escritorio_id: string;
   liberado_lista_positiva: boolean;
 };
@@ -62,33 +61,12 @@ async function registrarLead(formData: FormData): Promise<void> {
   } else {
     const actor = await getCurrentActor();
 
-    if (actor?.tipo === "advogado") {
-      const lawyerRows = await query<AgentData>(
-        `
-          SELECT
-            u.id AS agente_id,
-            u.celular AS agente_celular,
-            u.tipo AS agente_tipo,
-            e.id AS escritorio_id,
-            e.liberado_lista_positiva
-          FROM indicacao.usuarios u
-          INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
-          WHERE e.slug = $1
-            AND u.id = $2
-            AND u.tipo = 'advogado'
-          LIMIT 1
-        `,
-        [slug, actor.userId],
-      );
-
-      agent = lawyerRows[0] ?? null;
-    } else if (actor?.tipo === "agente") {
+    if (actor?.tipo === "agente") {
       const agentBySessionRows = await query<AgentData>(
         `
           SELECT
             u.id AS agente_id,
             u.celular AS agente_celular,
-            u.tipo AS agente_tipo,
             e.id AS escritorio_id,
             e.liberado_lista_positiva
           FROM indicacao.usuarios u
@@ -113,29 +91,17 @@ async function registrarLead(formData: FormData): Promise<void> {
     redirect(`/${slug}/painel?hash=${hash}`);
   }
 
-  const allowed =
-    agent.agente_tipo === "advogado"
-      ? await query<AllowedApp>(
-          `
-            SELECT a.id, a.nome_servico
-            FROM indicacao.aplicativos a
-            WHERE a.escritorio_id = $1
-              AND a.id::text = $2
-            LIMIT 1
-          `,
-          [agent.escritorio_id, appId],
-        )
-      : await query<AllowedApp>(
-          `
-            SELECT a.id, a.nome_servico
-            FROM indicacao.agentes_aplicativos aa
-            INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
-            WHERE aa.agente_id = $1
-              AND a.id::text = $2
-            LIMIT 1
-          `,
-          [agent.agente_id, appId],
-        );
+  const allowed = await query<AllowedApp>(
+    `
+      SELECT a.id, a.nome_servico
+      FROM indicacao.agentes_aplicativos aa
+      INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
+      WHERE aa.agente_id = $1
+        AND a.id::text = $2
+      LIMIT 1
+    `,
+    [agent.agente_id, appId],
+  );
 
   if (!allowed[0]) {
     throw new Error("Servico nao permitido para este agente");
@@ -206,33 +172,12 @@ export default async function PainelAgentePage({
   if (!agent) {
     const actor = await getCurrentActor();
 
-    if (actor?.tipo === "advogado") {
-      const lawyerRows = await query<AgentData>(
-        `
-          SELECT
-            u.id AS agente_id,
-            u.celular AS agente_celular,
-            u.tipo AS agente_tipo,
-            e.id AS escritorio_id,
-            e.liberado_lista_positiva
-          FROM indicacao.usuarios u
-          INNER JOIN indicacao.escritorios e ON e.id = u.escritorio_id
-          WHERE e.slug = $1
-            AND u.id = $2
-            AND u.tipo = 'advogado'
-          LIMIT 1
-        `,
-        [slug, actor.userId],
-      );
-
-      agent = lawyerRows[0] ?? null;
-    } else if (actor?.tipo === "agente") {
+    if (actor?.tipo === "agente") {
       const agentBySessionRows = await query<AgentData>(
         `
           SELECT
             u.id AS agente_id,
             u.celular AS agente_celular,
-            u.tipo AS agente_tipo,
             e.id AS escritorio_id,
             e.liberado_lista_positiva
           FROM indicacao.usuarios u
@@ -251,11 +196,11 @@ export default async function PainelAgentePage({
 
   if (!agent) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-        <section className="w-full rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">Acesso ao Painel</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Use o link de onboarding ou faca login como inquilino para acessar o painel.
+      <main className="auth-shell">
+        <section className="auth-card text-center">
+          <h1 className="text-xl font-semibold tracking-tight">Acesso ao painel</h1>
+          <p className="body-muted mt-2">
+            Use o link de acesso do agente ou faca login como agente para acessar o painel.
           </p>
         </section>
       </main>
@@ -266,10 +211,10 @@ export default async function PainelAgentePage({
 
   if (blockingState === "blocked") {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-        <section className="w-full rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">Conta suspensa</h1>
-          <p className="mt-2 text-sm text-slate-600">
+      <main className="auth-shell">
+        <section className="auth-card text-center">
+          <h1 className="text-xl font-semibold tracking-tight">Conta suspensa</h1>
+          <p className="body-muted mt-2">
             Seu escritorio esta bloqueado por lista positiva. Contate o administrador.
           </p>
         </section>
@@ -277,52 +222,42 @@ export default async function PainelAgentePage({
     );
   }
 
-  const apps =
-    agent.agente_tipo === "advogado"
-      ? await query<AllowedApp>(
-          `
-            SELECT a.id, a.nome_servico
-            FROM indicacao.aplicativos a
-            WHERE a.escritorio_id = $1
-            ORDER BY a.nome_servico ASC
-          `,
-          [agent.escritorio_id],
-        )
-      : await query<AllowedApp>(
-          `
-            SELECT a.id, a.nome_servico
-            FROM indicacao.agentes_aplicativos aa
-            INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
-            WHERE aa.agente_id = $1
-            ORDER BY a.nome_servico ASC
-          `,
-          [agent.agente_id],
-        );
+  const apps = await query<AllowedApp>(
+    `
+      SELECT a.id, a.nome_servico
+      FROM indicacao.agentes_aplicativos aa
+      INNER JOIN indicacao.aplicativos a ON a.id = aa.aplicativo_id
+      WHERE aa.agente_id = $1
+      ORDER BY a.nome_servico ASC
+    `,
+    [agent.agente_id],
+  );
 
   return (
-    <main className="mx-auto min-h-screen max-w-2xl px-6 py-10">
+    <main className="mx-auto min-h-[calc(100vh-84px)] max-w-2xl px-6 py-10">
       {blockingState === "warning" && (
-        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+        <div className="status-message status-message--info mb-4 mt-0">
           Aviso: este escritorio esta fora da lista positiva. No dia 4 o acesso sera bloqueado.
         </div>
       )}
 
-      <section className="rounded-xl border border-border bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">Novo Envio por WhatsApp</h1>
-        <p className="mt-2 text-sm text-slate-600">
+      <section className="surface-card p-8">
+        <p className="eyebrow">Envio rapido</p>
+        <h1 className="title-lg">Novo envio por WhatsApp</h1>
+        <p className="body-muted">
           Informe o WhatsApp do prospect e escolha um servico autorizado.
         </p>
 
-        <form action={registrarLead} className="mt-8 space-y-5">
+        <form action={registrarLead} className="form-stack">
           <input type="hidden" name="slug" value={slug} />
           {hash && <input type="hidden" name="hash" value={hash} />}
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-700">Servico juridico</span>
+            <span className="field-label">Servico juridico</span>
             <select
               name="appId"
               required
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
               defaultValue=""
             >
               <option value="" disabled>
@@ -337,19 +272,19 @@ export default async function PainelAgentePage({
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-700">WhatsApp do prospect</span>
+            <span className="field-label">WhatsApp do prospect</span>
             <PhoneInput
               name="whatsappLead"
               required
               placeholder="(11)91222-7040"
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
           <button
             type="submit"
             disabled={apps.length === 0}
-            className="rounded-lg bg-brand px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="primary-button w-full disabled:cursor-not-allowed"
           >
             Enviar
           </button>

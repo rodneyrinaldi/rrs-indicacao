@@ -57,58 +57,59 @@ export default function AtivarContaPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-      <section className="w-full rounded-xl border border-border bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">Ativacao de Conta</h1>
-        <p className="mt-2 text-sm text-slate-600">
+    <main className="auth-shell">
+      <section className="auth-card">
+        <p className="eyebrow">Primeiro acesso</p>
+        <h1 className="title-lg">Ativacao de conta</h1>
+        <p className="body-muted">
           Preencha seus dados para concluir o cadastro inicial.
         </p>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="form-stack" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700">Nome</span>
+            <span className="field-label">Nome</span>
             <input
               value={nome}
               onChange={(event) => setNome(event.target.value)}
               required
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700">Email</span>
+            <span className="field-label">Email</span>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700">Senha</span>
+            <span className="field-label">Senha</span>
             <input
               type="password"
               value={senha}
               onChange={(event) => setSenha(event.target.value)}
               required
               minLength={8}
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
           <button
             disabled={loading}
             type="submit"
-            className="rounded-lg bg-brand px-4 py-2 font-medium text-white disabled:bg-slate-400"
+            className="primary-button w-full"
           >
             {loading ? "Salvando..." : "Concluir cadastro"}
           </button>
         </form>
 
-        {mensagem && <p className="mt-4 text-sm text-green-700">{mensagem}</p>}
-        {erro && <p className="mt-4 text-sm text-red-700">{erro}</p>}
+        {mensagem && <p className="status-message status-message--success">{mensagem}</p>}
+        {erro && <p className="status-message status-message--error">{erro}</p>}
       </section>
     </main>
   );

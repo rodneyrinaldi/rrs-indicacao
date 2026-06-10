@@ -29,10 +29,10 @@ export default async function SuperAdminLoginPage({
 
   if (!process.env.SUPER_ADMIN_KEY) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-        <section className="w-full rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">SUPER_ADMIN_KEY nao configurada</h1>
-          <p className="mt-2 text-sm text-slate-600">
+      <main className="auth-shell">
+        <section className="auth-card text-center">
+          <h1 className="text-xl font-semibold tracking-tight">SUPER_ADMIN_KEY nao configurada</h1>
+          <p className="body-muted">
             Defina a variavel no .env para proteger o acesso ao painel administrativo.
           </p>
         </section>
@@ -45,30 +45,33 @@ export default async function SuperAdminLoginPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-      <section className="w-full rounded-xl border border-border bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">Login Super Admin</h1>
-        <p className="mt-2 text-sm text-slate-600">
+    <main className="auth-shell">
+      <section className="auth-card">
+        <p className="eyebrow">Ambiente protegido</p>
+        <h1 className="title-lg">Login super admin</h1>
+        <p className="body-muted">
           Somente o administrador com a chave correta pode acessar o painel.
         </p>
 
-        <form action={loginSuperAdmin} className="mt-6 space-y-4">
+        <form action={loginSuperAdmin} className="form-stack">
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700">Senha administrativa</span>
+            <span className="field-label">Senha administrativa</span>
             <input
               type="password"
               name="adminKey"
               required
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
-          <button type="submit" className="rounded-lg bg-brand px-4 py-2 font-medium text-white">
+          <button type="submit" className="primary-button w-full">
             Entrar
           </button>
         </form>
 
-        {erro === "senha-invalida" && <p className="mt-4 text-sm text-red-700">Senha invalida.</p>}
+        {erro === "senha-invalida" && (
+          <p className="status-message status-message--error">Senha invalida.</p>
+        )}
       </section>
     </main>
   );

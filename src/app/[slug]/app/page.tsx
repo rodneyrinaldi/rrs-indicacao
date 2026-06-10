@@ -203,6 +203,36 @@ function normalizeServiceUrl(input: string): string {
   return url.toString();
 }
 
+function buildAgentAccessMessage(input: {
+  officeName: string;
+  accessLink: string;
+  activationLink: string;
+  loginLink: string;
+  isActive: boolean;
+  serviceNames: string[];
+}): string {
+  const servicesText =
+    input.serviceNames.length > 0
+      ? input.serviceNames.join(", ")
+      : "nenhum servico disponivel no momento";
+
+  if (input.isActive) {
+    return [
+      `Ola! Seu acesso para enviar indicacoes do escritorio ${input.officeName} esta aqui: ${input.accessLink}`,
+      `Se preferir entrar com celular e senha, use: ${input.loginLink}`,
+      `Servicos disponiveis neste momento: ${servicesText}.`,
+      "Se eu adicionar ou remover servicos, este acesso refletira a lista atualizada.",
+    ].join("\n\n");
+  }
+
+  return [
+    `Ola! Ative seu acesso ao escritorio ${input.officeName} por aqui: ${input.activationLink}`,
+    `Depois, use este link para enviar indicacoes: ${input.accessLink}`,
+    `Servicos disponiveis neste momento: ${servicesText}.`,
+    "Se eu adicionar ou remover servicos, posso reenviar esta mensagem com a lista atualizada.",
+  ].join("\n\n");
+}
+
 async function createServiceLink(formData: FormData): Promise<void> {
   "use server";
 
@@ -222,16 +252,36 @@ async function createServiceLink(formData: FormData): Promise<void> {
   const normalizedUrl = normalizeServiceUrl(urlDestino);
   const { officeId } = await getLawyerOfficeForSlug(slug);
 
-  await query(
+  const createdService = await query<{ id: string }>(
     `
       INSERT INTO indicacao.aplicativos (escritorio_id, nome_servico, url_destino)
       VALUES ($1, $2, $3)
+      RETURNING id
     `,
     [officeId, serviceName, normalizedUrl],
   );
 
+  const serviceId = createdService[0]?.id;
+
+  if (!serviceId) {
+    throw new Error("Nao foi possivel criar o servico");
+  }
+
+  await query(
+    `
+      INSERT INTO indicacao.agentes_aplicativos (agente_id, aplicativo_id)
+      SELECT u.id, $2
+      FROM indicacao.usuarios u
+      WHERE u.escritorio_id = $1
+        AND u.tipo = 'agente'
+      ON CONFLICT (agente_id, aplicativo_id) DO NOTHING
+    `,
+    [officeId, serviceId],
+  );
+
   revalidatePath(`/${slug}/app`);
   revalidatePath(`/${slug}/painel`);
+  revalidatePath(`/${slug}/agente/app`);
 }
 
 async function updateServiceLink(formData: FormData): Promise<void> {
@@ -272,6 +322,7 @@ async function updateServiceLink(formData: FormData): Promise<void> {
 
   revalidatePath(`/${slug}/app`);
   revalidatePath(`/${slug}/painel`);
+  revalidatePath(`/${slug}/agente/app`);
 }
 
 async function deleteServiceLink(formData: FormData): Promise<void> {
@@ -297,6 +348,7 @@ async function deleteServiceLink(formData: FormData): Promise<void> {
 
   revalidatePath(`/${slug}/app`);
   revalidatePath(`/${slug}/painel`);
+  revalidatePath(`/${slug}/agente/app`);
 }
 
 async function createAgent(formData: FormData): Promise<void> {
@@ -531,50 +583,46 @@ export default async function LawyerAppPage({
 
   const baseUrl = await getRequestBaseUrl();
   const lawyerLoginLink = `${baseUrl}/${slug}/login`;
-  const tenantSendPanelLink = `${baseUrl}/${slug}/painel`;
   const phoneChangeLink = trocaToken ? `${baseUrl}/confirmar-telefone/${trocaToken}` : null;
   const phoneChangeError = getPhoneChangeErrorMessage(trocaErro);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-xl px-5 py-8">
-      <header className="mb-6 rounded-2xl bg-slate-900 p-5 text-white shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-slate-300">Inquilino</p>
-        <h1 className="mt-2 text-2xl font-semibold">{office.nome_oficial}</h1>
-        <p className="mt-2 text-sm text-slate-200">App pronto para uso em celular (PWA).</p>
+    <main className="mx-auto min-h-[calc(100vh-84px)] w-full max-w-xl px-5 py-8">
+      <header className="surface-card mb-6 p-5">
+        <p className="eyebrow">Area do escritorio</p>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">{office.nome_oficial}</h1>
+        <p className="mt-2 text-sm text-slate-600">App pronto para uso em celular (PWA).</p>
         <form action={logoutLawyer} className="mt-4">
           <input type="hidden" name="slug" value={slug} />
-          <button
-            type="submit"
-            className="rounded-md border border-slate-500 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800"
-          >
+          <button type="submit" className="ghost-button">
             Sair
           </button>
         </form>
       </header>
 
       <section className="mb-5 grid grid-cols-2 gap-3">
-        <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <article className="surface-card p-4">
           <p className="text-xs uppercase text-slate-500">Total de Leads</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">{dashboard.summary.total}</p>
         </article>
-        <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <article className="surface-card p-4">
           <p className="text-xs uppercase text-slate-500">Fechados</p>
           <p className="mt-2 text-2xl font-semibold text-blue-700">{dashboard.summary.fechados}</p>
         </article>
       </section>
 
       <section className="mb-5 grid grid-cols-2 gap-3">
-        <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <article className="surface-card p-4">
           <p className="text-xs uppercase text-slate-500">Suspects</p>
           <p className="mt-2 text-xl font-semibold text-slate-900">{dashboard.summary.suspects}</p>
         </article>
-        <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <article className="surface-card p-4">
           <p className="text-xs uppercase text-slate-500">Prospects</p>
           <p className="mt-2 text-xl font-semibold text-slate-900">{dashboard.summary.prospects}</p>
         </article>
       </section>
 
-      <section className="mb-5 rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="surface-card mb-5 p-4">
         <h2 className="text-base font-semibold text-slate-900">Dados do Inquilino</h2>
         <dl className="mt-3 space-y-2 text-sm">
           <div>
@@ -593,19 +641,16 @@ export default async function LawyerAppPage({
           </div>
         </dl>
 
-        <form action={requestPhoneChange} className="mt-4 grid gap-3 rounded-lg border border-slate-200 p-3 md:grid-cols-2">
+        <form action={requestPhoneChange} className="mt-4 grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-2">
           <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="usuarioAlvoId" value={actor.userId} />
           <input
             name="celularNovo"
             required
             placeholder="Novo celular do inquilino"
-            className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+            className="input-control"
           />
-          <button
-            type="submit"
-            className="rounded-md border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-          >
+          <button type="submit" className="ghost-button border-blue-200 text-blue-700 hover:bg-blue-50">
             Gerar link de confirmacao
           </button>
         </form>
@@ -621,44 +666,40 @@ export default async function LawyerAppPage({
         )}
 
         {trocaUsuarioId === actor.userId && phoneChangeError && (
-          <p className="mt-3 text-sm text-red-700">{phoneChangeError}</p>
+          <p className="status-message status-message--error">{phoneChangeError}</p>
         )}
       </section>
 
-      <section className="mb-5 rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="surface-card mb-5 p-4">
         <h2 className="text-base font-semibold text-slate-900">Links do Escritorio</h2>
 
         <div className="mt-3">
           <CopyableLink label="Login do Inquilino" href={lawyerLoginLink} />
         </div>
-
-        <div className="mt-3">
-          <CopyableLink label="Painel de Envio" href={tenantSendPanelLink} />
-        </div>
       </section>
 
-      <section className="mb-5 rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="surface-card mb-5 p-4">
         <h2 className="text-base font-semibold text-slate-900">Servicos para Envio</h2>
         <p className="mt-2 text-sm text-slate-600">
           Cadastre os links que aparecerao no painel de envio por WhatsApp.
         </p>
 
-        <form action={createServiceLink} className="mt-4 grid gap-3 rounded-lg border border-slate-200 p-3 md:grid-cols-3">
+        <form action={createServiceLink} className="mt-4 grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-3">
           <input type="hidden" name="slug" value={slug} />
           <input
             name="nomeServico"
             required
             placeholder="Nome do servico"
-            className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+            className="input-control"
           />
           <input
             name="urlDestino"
             type="url"
             required
             placeholder="https://seu-link.com"
-            className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+            className="input-control"
           />
-          <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white">
+          <button type="submit" className="primary-button">
             Adicionar
           </button>
         </form>
@@ -676,18 +717,18 @@ export default async function LawyerAppPage({
                     name="nomeServico"
                     defaultValue={service.nome_servico}
                     required
-                    className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+                    className="input-control"
                   />
                   <input
                     name="urlDestino"
                     type="url"
                     defaultValue={service.url_destino}
                     required
-                    className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+                    className="input-control"
                   />
                   <button
                     type="submit"
-                    className="rounded-md border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                    className="ghost-button border-blue-200 text-blue-700 hover:bg-blue-50"
                   >
                     Salvar
                   </button>
@@ -698,7 +739,7 @@ export default async function LawyerAppPage({
                   <input type="hidden" name="appId" value={service.id} />
                   <button
                     type="submit"
-                    className="rounded-md border border-red-200 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                    className="ghost-button border-red-200 px-3 py-1 text-xs text-red-700 hover:bg-red-50"
                   >
                     Excluir
                   </button>
@@ -709,22 +750,22 @@ export default async function LawyerAppPage({
         )}
       </section>
 
-      <section className="mb-5 rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="surface-card mb-5 p-4">
         <h2 className="text-base font-semibold text-slate-900">Agentes de Indicacao</h2>
         <p className="mt-2 text-sm text-slate-600">
           Fluxo recomendado: 1) cadastre os servicos, 2) cadastre os agentes, 3) compartilhe o link
           de ativacao com cada agente para comecarem a cadastrar prospects.
         </p>
 
-        <form action={createAgent} className="mt-4 grid gap-3 rounded-lg border border-slate-200 p-3 md:grid-cols-3">
+        <form action={createAgent} className="mt-4 grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-3">
           <input type="hidden" name="slug" value={slug} />
           <input
             name="celular"
             required
             placeholder="Celular do agente"
-            className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+            className="input-control"
           />
-          <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white">
+          <button type="submit" className="primary-button">
             Cadastrar agente
           </button>
         </form>
@@ -738,6 +779,15 @@ export default async function LawyerAppPage({
               const onboardingSendLink = `${baseUrl}/${slug}/painel?hash=${agent.hash_unico}`;
               const agentLoginLink = `${baseUrl}/${slug}/agente/login`;
               const agentActivityPanelLink = `${baseUrl}/${slug}/agente/app`;
+              const accessMessage = buildAgentAccessMessage({
+                officeName: office.nome_oficial,
+                accessLink: onboardingSendLink,
+                activationLink,
+                loginLink: agentLoginLink,
+                isActive: Boolean(agent.senha_hash),
+                serviceNames: dashboard.services.map((service) => service.nome_servico),
+              });
+              const whatsappInviteLink = `https://wa.me/${normalizePhone(agent.celular)}?text=${encodeURIComponent(accessMessage)}`;
 
               return (
                 <li key={agent.id} className="rounded-lg border border-slate-200 p-3">
@@ -750,6 +800,11 @@ export default async function LawyerAppPage({
                   </p>
 
                   <div className="mt-3 space-y-2">
+                    <CopyableLink
+                      label="Mensagem pronta para reenviar ao agente"
+                      href={whatsappInviteLink}
+                      containerClassName="rounded-lg border border-blue-200 bg-blue-50 p-3"
+                    />
                     <CopyableLink
                       label="Link de ativacao do agente"
                       href={activationLink}
@@ -766,7 +821,7 @@ export default async function LawyerAppPage({
                       containerClassName="rounded-lg border border-slate-200 bg-slate-50 p-3"
                     />
                     <CopyableLink
-                      label="Link de envio do agente (onboarding)"
+                      label="Link de acesso do agente para envio"
                       href={onboardingSendLink}
                       containerClassName="rounded-lg border border-slate-200 bg-slate-50 p-3"
                     />
@@ -774,7 +829,7 @@ export default async function LawyerAppPage({
 
                   <form
                     action={requestPhoneChange}
-                    className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 md:grid-cols-[1fr_auto]"
+                    className="mt-3 grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-[1fr_auto]"
                   >
                     <input type="hidden" name="slug" value={slug} />
                     <input type="hidden" name="usuarioAlvoId" value={agent.id} />
@@ -782,11 +837,11 @@ export default async function LawyerAppPage({
                       name="celularNovo"
                       required
                       placeholder="Novo celular do agente"
-                      className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+                      className="input-control"
                     />
                     <button
                       type="submit"
-                      className="rounded-md border border-blue-200 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-50"
+                      className="ghost-button border-blue-200 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50"
                     >
                       Gerar link de confirmacao
                     </button>
@@ -803,7 +858,7 @@ export default async function LawyerAppPage({
                   )}
 
                   {trocaUsuarioId === agent.id && phoneChangeError && (
-                    <p className="mt-2 text-sm text-red-700">{phoneChangeError}</p>
+                    <p className="status-message status-message--error mt-2">{phoneChangeError}</p>
                   )}
                 </li>
               );
@@ -812,7 +867,7 @@ export default async function LawyerAppPage({
         )}
       </section>
 
-      <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="surface-card p-4">
         <h2 className="text-base font-semibold text-slate-900">Ultimas Indicacoes dos Agentes</h2>
 
         <form method="GET" className="mt-3 flex flex-wrap items-end gap-2">
@@ -822,18 +877,18 @@ export default async function LawyerAppPage({
               type="date"
               name="data"
               defaultValue={selectedDate ?? ""}
-              className="ml-2 rounded-md border border-border px-2 py-1 text-xs text-slate-700"
+              className="input-control ml-2 inline-flex w-auto px-2 py-1 text-xs"
             />
           </label>
           <button
             type="submit"
-            className="rounded-md border border-blue-200 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50"
+            className="ghost-button border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
           >
             Filtrar 30 dias
           </button>
           <a
             href={`/${slug}/app`}
-            className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            className="ghost-button px-2 py-1 text-xs"
           >
             Limpar
           </a>
@@ -861,7 +916,7 @@ export default async function LawyerAppPage({
                   <select
                     name="status"
                     defaultValue={lead.status}
-                    className="rounded-md border border-border px-2 py-1 text-xs text-slate-700"
+                    className="input-control w-auto px-2 py-1 text-xs"
                   >
                     <option value="suspect">Suspect</option>
                     <option value="prospect">Prospect</option>
@@ -869,7 +924,7 @@ export default async function LawyerAppPage({
                   </select>
                   <button
                     type="submit"
-                    className="rounded-md border border-blue-200 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50"
+                    className="ghost-button border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
                   >
                     Atualizar status
                   </button>

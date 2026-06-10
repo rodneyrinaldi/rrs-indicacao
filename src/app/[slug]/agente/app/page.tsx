@@ -192,10 +192,10 @@ export default async function AgentAppPage({
 
   if (!office) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-        <section className="w-full rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">Escritorio nao encontrado</h1>
-          <p className="mt-2 text-sm text-slate-600">Valide o endereco informado para login.</p>
+      <main className="auth-shell">
+        <section className="auth-card text-center">
+          <h1 className="text-xl font-semibold tracking-tight">Escritorio nao encontrado</h1>
+          <p className="body-muted mt-2">Valide o endereco informado para login.</p>
         </section>
       </main>
     );
@@ -262,23 +262,20 @@ export default async function AgentAppPage({
   const phoneChangeError = getPhoneChangeErrorMessage(trocaErro);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-xl px-5 py-8">
-      <header className="mb-6 rounded-2xl bg-slate-900 p-5 text-white shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-slate-300">Agente</p>
-        <h1 className="mt-2 text-2xl font-semibold">{dashboard.profile?.nome ?? "Agente"}</h1>
-        <p className="mt-2 text-sm text-slate-200">{office.nome_oficial}</p>
+    <main className="mx-auto min-h-[calc(100vh-84px)] w-full max-w-xl px-5 py-8">
+      <header className="surface-card mb-6 p-5">
+        <p className="eyebrow">Area do agente</p>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">{dashboard.profile?.nome ?? "Agente"}</h1>
+        <p className="mt-2 text-sm text-slate-600">{office.nome_oficial}</p>
         <form action={logoutAgent} className="mt-4">
           <input type="hidden" name="slug" value={slug} />
-          <button
-            type="submit"
-            className="rounded-md border border-slate-500 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800"
-          >
+          <button type="submit" className="ghost-button">
             Sair
           </button>
         </form>
       </header>
 
-      <section className="mb-5 rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="surface-card mb-5 p-4">
         <h2 className="text-base font-semibold text-slate-900">Seus Dados</h2>
         <dl className="mt-3 space-y-2 text-sm">
           <div>
@@ -297,18 +294,15 @@ export default async function AgentAppPage({
           </div>
         </dl>
 
-        <form action={requestOwnPhoneChange} className="mt-4 grid gap-3 rounded-lg border border-slate-200 p-3 md:grid-cols-2">
+        <form action={requestOwnPhoneChange} className="mt-4 grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-2">
           <input type="hidden" name="slug" value={slug} />
           <input
             name="celularNovo"
             required
             placeholder="Novo celular"
-            className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+            className="input-control"
           />
-          <button
-            type="submit"
-            className="rounded-md border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-          >
+          <button type="submit" className="ghost-button border-blue-200 text-blue-700 hover:bg-blue-50">
             Gerar link de confirmacao
           </button>
         </form>
@@ -323,10 +317,10 @@ export default async function AgentAppPage({
           </div>
         )}
 
-        {phoneChangeError && <p className="mt-3 text-sm text-red-700">{phoneChangeError}</p>}
+        {phoneChangeError && <p className="status-message status-message--error">{phoneChangeError}</p>}
       </section>
 
-      <section className="mb-5 rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="surface-card mb-5 p-4">
         <h2 className="text-base font-semibold text-slate-900">Acesso ao Envio</h2>
         <p className="mt-2 text-sm text-slate-600">
           Use este link para abrir o formulario de envio de novos prospects.
@@ -337,28 +331,28 @@ export default async function AgentAppPage({
       </section>
 
       <section className="mb-5 grid grid-cols-2 gap-3">
-        <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <article className="surface-card p-4">
           <p className="text-xs uppercase text-slate-500">Total de Leads</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">{dashboard.summary.total}</p>
         </article>
-        <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <article className="surface-card p-4">
           <p className="text-xs uppercase text-slate-500">Fechados</p>
           <p className="mt-2 text-2xl font-semibold text-blue-700">{dashboard.summary.fechados}</p>
         </article>
       </section>
 
       <section className="mb-5 grid grid-cols-2 gap-3">
-        <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <article className="surface-card p-4">
           <p className="text-xs uppercase text-slate-500">Suspects</p>
           <p className="mt-2 text-xl font-semibold text-slate-900">{dashboard.summary.suspects}</p>
         </article>
-        <article className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <article className="surface-card p-4">
           <p className="text-xs uppercase text-slate-500">Prospects</p>
           <p className="mt-2 text-xl font-semibold text-slate-900">{dashboard.summary.prospects}</p>
         </article>
       </section>
 
-      <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="surface-card p-4">
         <h2 className="text-base font-semibold text-slate-900">Todos os Prospects Indicados</h2>
 
         <form method="GET" className="mt-3 flex flex-wrap items-end gap-2">
@@ -368,18 +362,18 @@ export default async function AgentAppPage({
               type="date"
               name="data"
               defaultValue={selectedDate ?? ""}
-              className="ml-2 rounded-md border border-border px-2 py-1 text-xs text-slate-700"
+              className="input-control ml-2 inline-flex w-auto px-2 py-1 text-xs"
             />
           </label>
           <button
             type="submit"
-            className="rounded-md border border-blue-200 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50"
+            className="ghost-button border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
           >
             Filtrar 30 dias
           </button>
           <a
             href={`/${slug}/agente/app`}
-            className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            className="ghost-button px-2 py-1 text-xs"
           >
             Limpar
           </a>

@@ -119,10 +119,10 @@ export default async function SuperAdminPage({
 
   if (!process.env.SUPER_ADMIN_KEY) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-        <section className="w-full rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">SUPER_ADMIN_KEY nao configurada</h1>
-          <p className="mt-2 text-sm text-slate-600">
+      <main className="auth-shell">
+        <section className="auth-card text-center">
+          <h1 className="text-xl font-semibold tracking-tight">SUPER_ADMIN_KEY nao configurada</h1>
+          <p className="body-muted">
             Defina a variavel no .env para proteger o acesso ao painel administrativo.
           </p>
         </section>
@@ -158,71 +158,69 @@ export default async function SuperAdminPage({
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto min-h-[calc(100vh-84px)] max-w-6xl px-6 py-10">
       <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Lista Positiva de Escritorios</h1>
+        <p className="eyebrow">Gestao administrativa</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Lista positiva de escritorios</h1>
         <p className="mt-2 text-sm text-slate-600">
           Altere entre Livre e Bloqueado para governar o acesso mensal.
         </p>
         <form action={logoutSuperAdmin} className="mt-4">
-          <button
-            type="submit"
-            className="rounded-md border border-border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
+          <button type="submit" className="ghost-button">
             Sair
           </button>
         </form>
       </header>
 
-      <section className="mb-6 rounded-xl border border-border bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Onboarding de Inquilino</h2>
+      <section className="surface-card mb-6 p-6">
+        <h2 className="text-lg font-semibold tracking-tight">Onboarding de inquilino</h2>
         <p className="mt-2 text-sm text-slate-600">
           Cadastre o celular do advogado e um slug para gerar o link inicial de ativacao.
         </p>
 
         <form action={createTenant} className="mt-4 grid gap-4 md:grid-cols-3">
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700">Slug do escritorio</span>
+            <span className="field-label">Slug do escritorio</span>
             <input
               name="slug"
               required
               placeholder="ex.: rrs-advocacia"
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700">Celular do advogado</span>
+            <span className="field-label">Celular do advogado</span>
             <PhoneInput
               name="celular"
               required
               placeholder="(11)91222-7040"
-              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-brand"
+              className="input-control"
             />
           </label>
 
           <div className="flex items-end">
-            <button type="submit" className="rounded-md bg-brand px-4 py-2 font-medium text-white">
+            <button type="submit" className="primary-button">
               Cadastrar
             </button>
           </div>
         </form>
 
         {activationUrl && (
-          <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-slate-700">
+          <div className="status-message status-message--info">
             <CopyableLink
               label="Link de ativacao gerado"
               href={activationUrl}
               containerClassName=""
-              labelClassName="text-sm text-slate-700"
-              buttonClassName="mt-2 rounded-md border border-blue-200 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+              labelClassName="text-sm text-sky-900"
+              buttonClassName="mt-2 rounded-lg border border-sky-300 px-3 py-1.5 text-xs font-medium text-sky-700 hover:bg-sky-100"
             />
           </div>
         )}
       </section>
 
       {databaseError ? (
-        <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 shadow-sm">
+        <section className="status-message status-message--warning p-6 text-sm">
           <h2 className="text-lg font-semibold">Banco de dados indisponivel</h2>
           <p className="mt-2">
             Nao foi possivel carregar os escritorios. Verifique se o banco esta em execucao e se
@@ -231,7 +229,7 @@ export default async function SuperAdminPage({
           <p className="mt-2 break-all text-xs text-amber-800">{databaseError}</p>
         </section>
       ) : (
-        <section className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+        <section className="surface-card overflow-hidden">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-slate-50 text-left text-slate-700">
               <tr>
@@ -264,7 +262,7 @@ export default async function SuperAdminPage({
                       <input type="hidden" name="escritorioId" value={tenant.id} />
                       <button
                         type="submit"
-                        className="rounded-md border border-border px-3 py-2 font-medium text-brand hover:bg-blue-50"
+                        className="ghost-button border-blue-200 text-blue-700 hover:bg-blue-50"
                       >
                         Alternar
                       </button>

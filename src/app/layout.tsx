@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { BrandHeader } from "@/components/brand-header";
 import "./globals.css";
 import { PwaRegister } from "./pwa-register";
+
+const appFont = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-app-sans",
+});
 
 export const metadata: Metadata = {
   title: "Indicacao | SaaS White Label",
@@ -21,9 +29,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body>
+      <body className={appFont.variable}>
         <PwaRegister />
-        {children}
+        <div className="app-frame">
+          <BrandHeader />
+          <div className="app-content">{children}</div>
+        </div>
       </body>
     </html>
   );

@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --border: #dadce0;
+  --border: #d7deec;
   --brand: #1a73e8;
-  --text: #202124;
-  --muted: #5f6368;
-  --bg: #f8f9fa;
+  --brand-strong: #1557b0;
+  --text: #1e293b;
+  --muted: #556274;
+  --bg: #f4f8fc;
+  --surface: #ffffff;
 }
 
 * {
@@ -20,7 +22,8 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--font-app-sans), "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.45;
 }
 
 a {
@@ -31,4 +34,162 @@ input,
 select,
 button {
   font: inherit;
+}
+
+main {
+  width: 100%;
+}
+
+.app-frame {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 4% -3%, rgba(26, 115, 232, 0.12), transparent 26%),
+    radial-gradient(circle at 96% 12%, rgba(2, 132, 199, 0.1), transparent 24%),
+    linear-gradient(180deg, #f8fbff 0%, #f3f7fc 60%, #eef4fb 100%);
+}
+
+.app-content {
+  min-height: calc(100vh - 84px);
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(248, 251, 255, 0.86);
+  backdrop-filter: blur(10px);
+}
+
+.app-header__inner {
+  margin: 0 auto;
+  display: flex;
+  max-width: 1200px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-mark__svg {
+  height: 38px;
+  width: 38px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.24);
+}
+
+.brand-mark__title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.brand-mark__subtitle {
+  margin: 1px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-2xl border bg-white/95 shadow-sm;
+    border-color: var(--border);
+  }
+
+  .auth-shell {
+    @apply mx-auto flex min-h-[calc(100vh-84px)] w-full max-w-5xl items-center justify-center px-6 py-10;
+  }
+
+  .auth-card {
+    @apply w-full max-w-xl rounded-3xl border bg-white/95 p-8 shadow-sm backdrop-blur-sm md:p-10;
+    border-color: var(--border);
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.16em];
+    color: #0b63ce;
+  }
+
+  .title-lg {
+    @apply mt-3 text-3xl font-semibold tracking-tight text-slate-900;
+  }
+
+  .body-muted {
+    @apply mt-3 text-sm leading-6 text-slate-600;
+  }
+
+  .form-stack {
+    @apply mt-7 space-y-4;
+  }
+
+  .field-label {
+    @apply mb-1 block text-sm font-medium text-slate-700;
+  }
+
+  .input-control {
+    @apply w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition;
+    border-color: var(--border);
+  }
+
+  .input-control::placeholder {
+    @apply text-slate-400;
+  }
+
+  .input-control:focus {
+    border-color: #5a9bff;
+    box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.14);
+  }
+
+  .primary-button {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition;
+    background: linear-gradient(135deg, #1a73e8 0%, #1668d6 55%, #1557b0 100%);
+    box-shadow: 0 10px 24px rgba(26, 115, 232, 0.25);
+  }
+
+  .primary-button:hover {
+    filter: brightness(1.03);
+  }
+
+  .primary-button:disabled {
+    @apply cursor-not-allowed;
+    box-shadow: none;
+    filter: saturate(0.65);
+  }
+
+  .ghost-button {
+    @apply inline-flex items-center justify-center rounded-xl border bg-white px-4 py-2 text-sm font-medium text-slate-700 transition;
+    border-color: var(--border);
+  }
+
+  .ghost-button:hover {
+    @apply bg-slate-50;
+  }
+
+  .status-message {
+    @apply mt-4 rounded-xl border px-4 py-2.5 text-sm;
+  }
+
+  .status-message--error {
+    @apply border-red-200 bg-red-50 text-red-700;
+  }
+
+  .status-message--success {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+
+  .status-message--warning {
+    @apply border-amber-200 bg-amber-50 text-amber-800;
+  }
+
+  .status-message--info {
+    @apply border-sky-200 bg-sky-50 text-sky-800;
+  }
 }
